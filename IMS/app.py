@@ -60,12 +60,17 @@ def signIn():
         if len(data) == 1:
             user = []
             for elem in data:
+                query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
+                cursor.execute(query2, (elem[0]))
+                data2 = cursor.fetchall()
                 user_dict = {}
                 user_dict["Id"] = elem[0]
                 user_dict["Email"] = elem[2]
-                user_dict["Name"] = elem[3] + " " + elem[4]
+                user_dict["Name"] = elem[3]
+                user_dict["Surname"] = elem[4]
                 user_dict["RFID"] = elem[5]
                 user_dict["Type"] = elem[6]
+                user_dict["CustomerId"] = data2[0][0]
                 user.append(user_dict)
             return jsonify(user)
         else:
@@ -88,20 +93,23 @@ def signInRFID():
         if len(data) == 1:
             user = []
             for elem in data:
+                query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
+                cursor.execute(query2, (elem[0]))
+                data2 = cursor.fetchall()
                 user_dict = {}
                 user_dict["Id"] = elem[0]
                 user_dict["Email"] = elem[2]
-                user_dict["Name"] = elem[3] + " " + elem[4]
+                user_dict["Name"] = elem[3]
+                user_dict["Surname"] = elem[4]
                 user_dict["RFID"] = elem[5]
                 user_dict["Type"] = elem[6]
+                user_dict["CustomerId"] = data2[0][0]
                 user.append(user_dict)
             return jsonify(user)
         else:
-
-            # return json.dumps({'Error': 'RFID not found'})
-            return json.dumps({'Response': 'Ok', 'Reason': 'RFID not found'})
+            return json.dumps({'Response': 'Error', 'Reason': 'RFID not found'}), 404
     else:
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
 
 @app.route('/api/users', methods=["GET"])
 def getUsers():
@@ -116,12 +124,17 @@ def getUsers():
     users = []
 
     for elem in data:
+        query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
+        cursor.execute(query2, (elem[0]))
+        data2 = cursor.fetchall()
         user_dict = {}
         user_dict["Id"] = elem[0]
         user_dict["Email"] = elem[2]
-        user_dict["Name"] = elem[3] + " " + elem[4]
+        user_dict["Name"] = elem[3]
+        user_dict["Surname"] = elem[4]
         user_dict["RFID"] = elem[5]
         user_dict["Type"] = elem[6]
+        user_dict["CustomerId"] = data2[0][0]
         users.append(user_dict)
 
     #return json.dumps(users)
@@ -141,12 +154,17 @@ def getUserById(id):
         users = []
 
         for elem in data:
+            query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
+            cursor.execute(query2, (id))
+            data2 = cursor.fetchall()
             user_dict = {}
             user_dict["Id"] = elem[0]
             user_dict["Email"] = elem[2]
-            user_dict["Name"] = elem[3] + " " + elem[4]
+            user_dict["Name"] = elem[3]
+            user_dict["Surname"] = elem[4]
             user_dict["RFID"] = elem[5]
             user_dict["Type"] = elem[6]
+            user_dict["CustomerId"] = data2[0][0]
             users.append(user_dict)
 
         return jsonify(users)
@@ -172,13 +190,18 @@ def getUserByEmail():
 
     users = []
     if len(data) == 1:
+        query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
+        cursor.execute(query2, (data[0][0]))
+        data2 = cursor.fetchall()
         for elem in data:
             user_dict = {}
             user_dict["Id"] = elem[0]
             user_dict["Email"] = elem[2]
-            user_dict["Name"] = elem[3] + " " + elem[4]
+            user_dict["Name"] = elem[3]
+            user_dict["Surname"] = elem[4]
             user_dict["RFID"] = elem[5]
             user_dict["Type"] = elem[6]
+            user_dict["CustomerId"] = data2[0][0]
             users.append(user_dict)
 
     return jsonify(users) 
@@ -189,16 +212,33 @@ def createUser():
     conn = mysql.connect()
     cursor = conn.cursor()
 
-    if request.json["password"] and request.json["email"] and request.json["name"] and request.json["surname"] and request.json["rfid"]:
-        query = "INSERT INTO USERS(password, username, name, surname, rfid) VALUES(%s, %s, %s, %s, %s)"
-        cursor.execute(query, (request.json["password"], request.json["email"], request.json["name"], request.json["surname"], request.json["rfid"]))
-        conn.commit()
+    if request.json["password"] and request.json["email"] and request.json["name"] and request.json["surname"] and request.json["rfid"] and request.json["type"] and request.json["customerId"]:
+        query2 = "SELECT * FROM CUSTOMERS WHERE customerId = %s"
+        cursor.execute(query2, (request.json["customerId"]))
+        data = cursor.fetchall()
 
-        return json.dumps({'Response': 'Ok'})
+        if len(data) != 1:
+
+            return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+        
+        else:
+
+            query = "INSERT INTO USERS(password, username, name, surname, rfid, type) VALUES(%s, %s, %s, %s, %s, %s)"
+            cursor.execute(query, (request.json["password"], request.json["email"], request.json["name"], request.json["surname"], request.json["rfid"], request.json["type"]))
+            conn.commit()
+            query3 = "SELECT userId FROM USERS WHERE username = %s"
+            cursor.execute(query3, (request.json["email"]))
+            data2 = cursor.fetchall()
+            print(data2[0][0])
+            query4 = "INSERT INTO USERS2CUSTOMERS(userId, customerId) VALUES(%s, %s)"
+            cursor.execute(query4, (data2[0][0], request.json["customerId"]))
+            conn.commit()
+
+            return json.dumps({'Response': 'Ok'})
     
     else:
 
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
     
 
 #####################
@@ -265,7 +305,7 @@ def createCustomer():
 
         return json.dumps({'Response': 'Ok'})
     else:
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
 
 #################
 ### ITEMS API ###
@@ -342,7 +382,7 @@ def createItem():
 
         return json.dumps({'Response': 'Ok'})
     else:
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
 
 @app.route('/api/items/isRented/<int:itemId>', methods=["GET"])
 def isItemRented(itemId):
@@ -354,7 +394,7 @@ def isItemRented(itemId):
     data = cursor.fetchall()
 
     if len(data) == 0:
-        return json.dumps({'Response': 'Error', 'Reason': 'Item does not exist'})
+        return json.dumps({'Response': 'Error', 'Reason': 'Item does not exist'}), 404
     else:
         if data[0][0] == 0:
             return json.dumps({'Loaned': 'No', 'Status': '0'})
@@ -382,7 +422,7 @@ def rentItemToUser():
         else:
             return json.dumps({'Response': 'Error', 'Reason': 'Item rented already'})
     else:
-        return json.dumps({'Response': 'Error'})
+        return json.dumps({'Response': 'Error'}), 400
 
 ## Rent item with item RFID
 @app.route('/api/items/rentRFID', methods=["PUT"])
@@ -401,7 +441,7 @@ def rentItemToUserWithRFID():
 
         return json.dumps({'Response': 'Ok'})
     else:
-        return json.dumps({'Response': 'Error'})
+        return json.dumps({'Response': 'Error'}), 400
 
 ## Return item with item id
 @app.route('/api/items/return/<int:itemId>', methods=["PUT"])
@@ -416,7 +456,7 @@ def returnItem(itemId):
 
         return json.dumps({'Response': 'Ok'})
     else:
-        return json.dumps({'Response': 'Error'})
+        return json.dumps({'Response': 'Error'}), 400
 
 ## Return item with item RFID
 @app.route('/api/items/returnRFID/<int:itemRFID>', methods=["PUT"])
@@ -431,7 +471,7 @@ def returnItemRFID(itemRFID):
 
         return json.dumps({'Response': 'Ok'})
     else:
-        return json.dumps({'Response': 'Error'})
+        return json.dumps({'Response': 'Error'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
