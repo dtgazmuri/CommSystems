@@ -20,10 +20,6 @@ def main():
     return render_template('index.html')
     # return 'Hello world'
 
-@app.route('/cakes')
-def cakes():
-    return 'Yummy cakes!'
-
 @app.route('/validateRFID', methods = ["GET", "POST"])
 def RFID():
     # rfid_number = request.args.get("RFID")
@@ -62,7 +58,6 @@ def signIn():
         print(data)
 
         if len(data) == 1:
-            print("Success")
             user = []
             for elem in data:
                 user_dict = {}
@@ -70,43 +65,43 @@ def signIn():
                 user_dict["Email"] = elem[2]
                 user_dict["Name"] = elem[3] + " " + elem[4]
                 user_dict["RFID"] = elem[5]
+                user_dict["Type"] = elem[6]
                 user.append(user_dict)
             return jsonify(user)
         else:
             print("No")
-            return json.dumps({'message': 'Wrong credentials'})
+            return json.dumps({'Response': 'Ok', 'Reason': 'Wrong credentials'})
 
 @app.route('/api/signInRFID', methods=["POST","OPTIONS"])
 def signInRFID():
-    # rfid = request.form["RFID"]
-    print(request.user_agent)
-    print(request.is_json)
-    print(request.headers)
-    #rfid = request.json["rfid"]
-    #print(rfid)
-    return "20"
-    '''
-    if rfid:
+    if request.json["itemRFID"]:
+        itemRFID = request.json["itemRFID"]
         conn = mysql.connect()
         cursor = conn.cursor()
 
         query = "SELECT * FROM Users WHERE rfid = %s"
-        values = (rfid)
+        values = (itemRFID)
 
         cursor.execute(query, values)
         data = cursor.fetchall()
 
         if len(data) == 1:
-            user1 = str(data[0][3])
-            user2 = str(data[0][4])
-            user = user1 + " " + user2
-            response = make_response(jsonify(Success = str(user)),200)
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            return response
-            #return json.dumps({'Success': user})
+            user = []
+            for elem in data:
+                user_dict = {}
+                user_dict["Id"] = elem[0]
+                user_dict["Email"] = elem[2]
+                user_dict["Name"] = elem[3] + " " + elem[4]
+                user_dict["RFID"] = elem[5]
+                user_dict["Type"] = elem[6]
+                user.append(user_dict)
+            return jsonify(user)
         else:
 
-            return json.dumps({'Error': 'RFID not found'})'''
+            # return json.dumps({'Error': 'RFID not found'})
+            return json.dumps({'Response': 'Ok', 'Reason': 'RFID not found'})
+    else:
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
 
 @app.route('/api/users', methods=["GET"])
 def getUsers():
@@ -126,6 +121,7 @@ def getUsers():
         user_dict["Email"] = elem[2]
         user_dict["Name"] = elem[3] + " " + elem[4]
         user_dict["RFID"] = elem[5]
+        user_dict["Type"] = elem[6]
         users.append(user_dict)
 
     #return json.dumps(users)
@@ -150,6 +146,7 @@ def getUserById(id):
             user_dict["Email"] = elem[2]
             user_dict["Name"] = elem[3] + " " + elem[4]
             user_dict["RFID"] = elem[5]
+            user_dict["Type"] = elem[6]
             users.append(user_dict)
 
         return jsonify(users)
@@ -160,7 +157,7 @@ def getUserById(id):
         cursor.execute(query, id)
         conn.commit()
 
-        return "200: User deleted"
+        return json.dumps({'Response': 'Ok'})
 
 @app.route('/api/users/email', methods=["GET"])
 def getUserByEmail():
@@ -181,6 +178,7 @@ def getUserByEmail():
             user_dict["Email"] = elem[2]
             user_dict["Name"] = elem[3] + " " + elem[4]
             user_dict["RFID"] = elem[5]
+            user_dict["Type"] = elem[6]
             users.append(user_dict)
 
     return jsonify(users) 
@@ -196,11 +194,11 @@ def createUser():
         cursor.execute(query, (request.json["password"], request.json["email"], request.json["name"], request.json["surname"], request.json["rfid"]))
         conn.commit()
 
-        return "200: User created"
+        return json.dumps({'Response': 'Ok'})
     
     else:
 
-        return "400: Bad request"
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
     
 
 #####################
@@ -252,7 +250,7 @@ def getCustomerById(id):
         cursor.execute(query, id)
         conn.commit()
 
-        return "200: Customer deleted"
+        return json.dumps({'Response': 'Ok'})
 
 ## New customer
 @app.route('/api/customers/register', methods=["POST"])
@@ -265,9 +263,9 @@ def createCustomer():
         cursor.execute(query, (request.json["name"]))
         conn.commit()
 
-        return "200: Customer created"
+        return json.dumps({'Response': 'Ok'})
     else:
-        return "400: Bad request"
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
 
 #################
 ### ITEMS API ###
@@ -329,7 +327,7 @@ def getItemById(id):
         cursor.execute(query, id)
         conn.commit()
 
-        return "200: Item deleted"
+        return json.dumps({'Response': 'Ok'})
 
 ## New item
 @app.route('/api/items/create', methods=["POST"])
@@ -342,9 +340,9 @@ def createItem():
         cursor.execute(query, (request.json["description"], request.json["name"], request.json["category"], request.json["customer"], request.json["rfid"]))
         conn.commit()
 
-        return "200: Item created"
+        return json.dumps({'Response': 'Ok'})
     else:
-        return "400: Bad request"
+        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'})
 
 @app.route('/api/items/isRented/<int:itemId>', methods=["GET"])
 def isItemRented(itemId):
@@ -356,12 +354,12 @@ def isItemRented(itemId):
     data = cursor.fetchall()
 
     if len(data) == 0:
-        return "404: Item does not exist"
+        return json.dumps({'Response': 'Error', 'Reason': 'Item does not exist'})
     else:
         if data[0][0] == 0:
-            return "0"
+            return json.dumps({'Loaned': 'No', 'Status': '0'})
         else:
-            return "1"
+            return json.dumps({'Loaned': 'Yes', 'Status': '1'})
 
 
 ## Rent item with item id
@@ -380,11 +378,11 @@ def rentItemToUser():
             cursor.execute(query, values)
             conn.commit()
 
-            return "200: Success"
+            return json.dumps({'Response': 'Ok'})
         else:
-            return "400: Item rented already"
+            return json.dumps({'Response': 'Error', 'Reason': 'Item rented already'})
     else:
-        return "400: Bad request"
+        return json.dumps({'Response': 'Error'})
 
 ## Rent item with item RFID
 @app.route('/api/items/rentRFID', methods=["PUT"])
@@ -401,9 +399,9 @@ def rentItemToUserWithRFID():
         cursor.execute(query, values)
         conn.commit()
 
-        return "200: Success"
+        return json.dumps({'Response': 'Ok'})
     else:
-        return "400: Bad request"
+        return json.dumps({'Response': 'Error'})
 
 ## Return item with item id
 @app.route('/api/items/return/<int:itemId>', methods=["PUT"])
@@ -416,9 +414,9 @@ def returnItem(itemId):
         cursor.execute(query, itemId)
         conn.commit()
 
-        return "200: Item returned"
+        return json.dumps({'Response': 'Ok'})
     else:
-        return "400: Bad request"
+        return json.dumps({'Response': 'Error'})
 
 ## Return item with item RFID
 @app.route('/api/items/returnRFID/<int:itemRFID>', methods=["PUT"])
@@ -431,9 +429,9 @@ def returnItemRFID(itemRFID):
         cursor.execute(query, itemRFID)
         conn.commit()
 
-        return "200: Item returned"
+        return json.dumps({'Response': 'Ok'})
     else:
-        return "400: Bad request"
+        return json.dumps({'Response': 'Error'})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
