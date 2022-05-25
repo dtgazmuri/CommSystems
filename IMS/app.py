@@ -72,10 +72,14 @@ def signIn():
                 user_dict["Type"] = elem[6]
                 user_dict["CustomerId"] = data2[0][0]
                 user.append(user_dict)
-            return jsonify(user)
+            response = make_response(jsonify(user), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
         else:
             print("No")
-            return json.dumps({'Response': 'Ok', 'Reason': 'Wrong credentials'})
+            response = make_response(jsonify(Reason = 'Wrong Credentials'), 404)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
 
 @app.route('/api/signInRFID', methods=["POST","OPTIONS"])
 def signInRFID():
@@ -105,11 +109,17 @@ def signInRFID():
                 user_dict["Type"] = elem[6]
                 user_dict["CustomerId"] = data2[0][0]
                 user.append(user_dict)
-            return jsonify(user)
+            response = make_response(jsonify(user), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
         else:
-            return json.dumps({'Response': 'Error', 'Reason': 'RFID not found'}), 404
+            response = make_response(jsonify(Reason = 'RFID not found!"), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
     else:
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+        response = make_response(jsonify(Reason = 'Bad request'), 400)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 @app.route('/api/users', methods=["GET"])
 def getUsers():
@@ -138,7 +148,10 @@ def getUsers():
         users.append(user_dict)
 
     #return json.dumps(users)
-    return jsonify(users)
+    response = make_response(jsonify(users), 200)
+    response.headers["Access-Control-Allow-Origin"]="*"
+    return response                               
+    #return jsonify(users)
 
 @app.route('/api/users/<int:id>', methods=["GET", "DELETE"])
 def getUserById(id):
@@ -167,15 +180,21 @@ def getUserById(id):
             user_dict["CustomerId"] = data2[0][0]
             users.append(user_dict)
 
-        return jsonify(users)
+        #return jsonify(users)
+        response = make_response(jsonify(users), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     
     elif request.method == "DELETE":
 
         query = "DELETE FROM Users WHERE USERID = %s"
         cursor.execute(query, id)
         conn.commit()
-
-        return json.dumps({'Response': 'Ok'})
+        
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
+        #return json.dumps({'Response': 'Ok'})
 
 @app.route('/api/users/email', methods=["GET"])
 def getUserByEmail():
@@ -204,7 +223,10 @@ def getUserByEmail():
             user_dict["CustomerId"] = data2[0][0]
             users.append(user_dict)
 
-    return jsonify(users) 
+    #return jsonify(users) 
+    response = make_response(jsonify(users), 200)
+    response.headers["Access-Control-Allow-Origin"]="*"
+    return response
 
 ## New user
 @app.route('/api/users/register', methods=["POST"])
@@ -219,7 +241,10 @@ def createUser():
 
         if len(data) != 1:
 
-            return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+            #return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+            response = make_response(jsonify(Reason = 'Bad request'), 400)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
         
         else:
 
@@ -233,13 +258,17 @@ def createUser():
             query4 = "INSERT INTO USERS2CUSTOMERS(userId, customerId) VALUES(%s, %s)"
             cursor.execute(query4, (data2[0][0], request.json["customerId"]))
             conn.commit()
-
-            return json.dumps({'Response': 'Ok'})
-    
+       
+            #return json.dumps({'Response': 'Ok'})
+            response = make_response(jsonify(Response = 'ok'), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
     else:
 
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
-    
+        #return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+        response = make_response(jsonify(Reason = 'Bad request'), 400)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 #####################
 ### CUSTOMERS API ###
@@ -263,7 +292,10 @@ def getCustomers():
         customers.append(customer_dict)
 
     #return json.dumps(customers)
-    return jsonify(customers)
+    #return jsonify(customers)
+    response = make_response(jsonify(customers), 200)
+    response.headers["Access-Control-Allow-Origin"]="*"
+    return response
 
 @app.route('/api/customers/<int:id>', methods=["GET", "DELETE"])
 def getCustomerById(id):
@@ -283,14 +315,20 @@ def getCustomerById(id):
             customer_dict["Name"] = elem[1]
             customer.append(customer_dict)
 
-        return jsonify(customer)
-    
+        #return jsonify(customer)
+        response = make_response(jsonify(customer), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response   
+                                             
     elif request.method == "DELETE":
         query = "DELETE FROM Customers WHERE CustomerId = %s"
         cursor.execute(query, id)
         conn.commit()
 
-        return json.dumps({'Response': 'Ok'})
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 ## New customer
 @app.route('/api/customers/register', methods=["POST"])
@@ -303,9 +341,15 @@ def createCustomer():
         cursor.execute(query, (request.json["name"]))
         conn.commit()
 
-        return json.dumps({'Response': 'Ok'})
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response                                    
     else:
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+        #return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+        response = make_response(jsonify(Reason = 'Bad request'), 400)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 #################
 ### ITEMS API ###
@@ -334,7 +378,10 @@ def getAllItems():
         item_dict["RFID"] = elem[7]
         items.append(item_dict)
 
-    return jsonify(items)
+    #return jsonify(items)
+    response = make_response(jsonify(items), 200)
+    response.headers["Access-Control-Allow-Origin"]="*"
+    return response
 
 @app.route('/api/items/<int:id>', methods=["GET", "DELETE"])
 def getItemById(id):
@@ -359,15 +406,21 @@ def getItemById(id):
             item_dict["Loaned"] = elem[6]
             item_dict["RFID"] = elem[7]
             items.append(item_dict)
-
-        return jsonify(items)
+ 
+        #return jsonify(items)
+        response = make_response(jsonify(items), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     
     elif request.method == "DELETE":
         query = "DELETE FROM ITEMS WHERE itemId = %s"
         cursor.execute(query, id)
         conn.commit()
 
-        return json.dumps({'Response': 'Ok'})
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 ## New item
 @app.route('/api/items/create', methods=["POST"])
@@ -380,9 +433,15 @@ def createItem():
         cursor.execute(query, (request.json["description"], request.json["name"], request.json["category"], request.json["customer"], request.json["rfid"]))
         conn.commit()
 
-        return json.dumps({'Response': 'Ok'})
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     else:
-        return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+        #return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
+        response = make_response(jsonify(Reason = 'Bad request'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 @app.route('/api/items/isRented/<int:itemId>', methods=["GET"])
 def isItemRented(itemId):
@@ -394,12 +453,21 @@ def isItemRented(itemId):
     data = cursor.fetchall()
 
     if len(data) == 0:
-        return json.dumps({'Response': 'Error', 'Reason': 'Item does not exist'}), 404
+        #return json.dumps({'Response': 'Error', 'Reason': 'Item does not exist'}), 404
+        response = make_response(jsonify(Reason = 'Item does not exist'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     else:
         if data[0][0] == 0:
-            return json.dumps({'Loaned': 'No', 'Status': '0'})
+            #return json.dumps({'Loaned': 'No', 'Status': '0'})
+            response = make_response(jsonify(Loaned = 'No', Status = '0'), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
         else:
-            return json.dumps({'Loaned': 'Yes', 'Status': '1'})
+            #return json.dumps({'Loaned': 'Yes', 'Status': '1'})
+            response = make_response(jsonify(Loaned = 'Yes', Status = '1'), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
 
 
 ## Rent item with item id
@@ -418,11 +486,20 @@ def rentItemToUser():
             cursor.execute(query, values)
             conn.commit()
 
-            return json.dumps({'Response': 'Ok'})
+            #return json.dumps({'Response': 'Ok'})
+            response = make_response(jsonify(Response = 'ok'), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
         else:
-            return json.dumps({'Response': 'Error', 'Reason': 'Item rented already'})
+            #return json.dumps({'Response': 'Error', 'Reason': 'Item rented already'})
+            response = make_response(jsonify(Reason = 'Item rented already'), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
     else:
-        return json.dumps({'Response': 'Error'}), 400
+        #return json.dumps({'Response': 'Error'}), 400
+        response = make_response(jsonify(Response = 'Error'), 400)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 ## Rent item with item RFID
 @app.route('/api/items/rentRFID', methods=["PUT"])
@@ -439,9 +516,15 @@ def rentItemToUserWithRFID():
         cursor.execute(query, values)
         conn.commit()
 
-        return json.dumps({'Response': 'Ok'})
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     else:
-        return json.dumps({'Response': 'Error'}), 400
+        #return json.dumps({'Response': 'Error'}), 400
+        response = make_response(jsonify(Response = 'Error'), 400)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 ## Return item with item id
 @app.route('/api/items/return/<int:itemId>', methods=["PUT"])
@@ -454,9 +537,15 @@ def returnItem(itemId):
         cursor.execute(query, itemId)
         conn.commit()
 
-        return json.dumps({'Response': 'Ok'})
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     else:
-        return json.dumps({'Response': 'Error'}), 400
+        #return json.dumps({'Response': 'Error'}), 400
+        response = make_response(jsonify(Response = 'Error'), 400)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 ## Return item with item RFID
 @app.route('/api/items/returnRFID/<int:itemRFID>', methods=["PUT"])
@@ -469,9 +558,15 @@ def returnItemRFID(itemRFID):
         cursor.execute(query, itemRFID)
         conn.commit()
 
-        return json.dumps({'Response': 'Ok'})
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
     else:
-        return json.dumps({'Response': 'Error'}), 400
+        #return json.dumps({'Response': 'Error'}), 400
+        response = make_response(jsonify(Response = 'Error'), 400)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
