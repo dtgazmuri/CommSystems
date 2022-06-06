@@ -1,7 +1,9 @@
 from urllib import response
-from flask import Flask, render_template, request, Response, jsonify, request, make_response
+from flask import Flask, render_template, request, Response, jsonify, request, make_response, session
+from flask_session import Session
 from flaskext.mysql import MySQL
 import json
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -13,6 +15,10 @@ app.config['MYSQL_DATABASE_PASSWORD'] = 'condorito'
 app.config['MYSQL_DATABASE_DB'] = 'LibrarySystem'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
+
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
 
 @app.route('/')
@@ -40,43 +46,59 @@ def showSignIn():
 
 @app.route('/api/signIn', methods=["POST"])
 def signIn():
-    email = request.form["inputEmail"]   
-    password = request.form["inputPassword"]
-    print(email)
-    print(password)
+    # email = request.form["inputEmail"]   
+    # password = request.form["inputPassword"]
+    email = request.json["inputEmail"]
+    password = request.json["inputPassword"]
 
     if email and password:
         conn = mysql.connect()
         cursor = conn.cursor()
 
-        query = "SELECT * FROM Users WHERE username=%s AND password=%s"
-        values = (email, password)
+        query = "SELECT * FROM Users WHERE username=%s"
+        values = (email)
 
         cursor.execute(query, values)
         data = cursor.fetchall()
 
-        print(data)
-
         if len(data) == 1:
-            user = []
-            for elem in data:
-                query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
-                cursor.execute(query2, (elem[0]))
-                data2 = cursor.fetchall()
-                user_dict = {}
-                user_dict["Id"] = elem[0]
-                user_dict["Email"] = elem[2]
-                user_dict["Name"] = elem[3]
-                user_dict["Surname"] = elem[4]
-                user_dict["RFID"] = elem[5]
-                user_dict["Type"] = elem[6]
-                user_dict["CustomerId"] = data2[0][0]
-                user.append(user_dict)
-            response = make_response(jsonify(user), 200)
-            response.headers["Access-Control-Allow-Origin"]="*"
-            return response
+            if (check_password_hash(data[0][1], password)):
+                print("Password check correct")
+                user = []
+                for elem in data:
+                    query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
+                    cursor.execute(query2, (elem[0]))
+                    data2 = cursor.fetchall()
+                    user_dict = {}
+                    '''
+                    user_dict["Id"] = elem[0]
+                    user_dict["Email"] = elem[2]
+                    user_dict["Name"] = elem[3]
+                    user_dict["Surname"] = elem[4]
+                    user_dict["RFID"] = elem[5]
+                    user_dict["Type"] = elem[6]
+                    user_dict["CustomerId"] = data2[0][0]
+                    '''
+                    user_dict["Id"] = str(elem[0])
+                    user_dict["Email"] = str(elem[2])
+                    user_dict["Name"] = str(elem[3])
+                    user_dict["Surname"] = str(elem[4])
+                    user_dict["RFID"] = str(elem[5])
+                    user_dict["Type"] = str(elem[6])
+                    user_dict["CustomerId"] = str(data2[0][0])
+                    user.append(user_dict)
+                session["email"] = user_dict["Email"]
+                session["name"] = user_dict["Name"] + " " + user_dict["Surname"]
+                response = make_response(jsonify(user[0]), 200)
+                response.headers["Access-Control-Allow-Origin"]="*"
+                return response
+            else:
+                print("Password check failed")
+                response = make_response(jsonify(Reason = 'Wrong Credentials'), 404)
+                response.headers["Access-Control-Allow-Origin"]="*"
+                return response
+            
         else:
-            print("No")
             response = make_response(jsonify(Reason = 'Wrong Credentials'), 404)
             response.headers["Access-Control-Allow-Origin"]="*"
             return response
@@ -101,6 +123,7 @@ def signInRFID():
                 cursor.execute(query2, (elem[0]))
                 data2 = cursor.fetchall()
                 user_dict = {}
+                '''
                 user_dict["Id"] = elem[0]
                 user_dict["Email"] = elem[2]
                 user_dict["Name"] = elem[3]
@@ -108,18 +131,37 @@ def signInRFID():
                 user_dict["RFID"] = elem[5]
                 user_dict["Type"] = elem[6]
                 user_dict["CustomerId"] = data2[0][0]
+                '''
+                user_dict["Id"] = str(elem[0])
+                user_dict["Email"] = str(elem[2])
+                user_dict["Name"] = str(elem[3])
+                user_dict["Surname"] = str(elem[4])
+                user_dict["RFID"] = str(elem[5])
+                user_dict["Type"] = str(elem[6])
+                user_dict["CustomerId"] = str(data2[0][0])
                 user.append(user_dict)
-            response = make_response(jsonify(user), 200)
+            session["email"] = user_dict["Email"]
+            session["name"] = user_dict["Name"] + " " + user_dict["Surname"]
+            response = make_response(jsonify(user[0]), 200)
             response.headers["Access-Control-Allow-Origin"]="*"
             return response
         else:
-            response = make_response(jsonify(Reason = 'RFID not found!"), 200)
+            response = make_response(jsonify(Reason = "RFID not found"), 200)
             response.headers["Access-Control-Allow-Origin"]="*"
             return response
     else:
         response = make_response(jsonify(Reason = 'Bad request'), 400)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
+
+@app.route('/api/logOut')
+def logOut():
+    session["email"] = None
+    session["name"] = None
+    response = make_response(jsonify(Message = "Success"), 200)
+    response.headers["Access-Control-Allow-Origin"]="*"
+    return response
+
 
 @app.route('/api/users', methods=["GET"])
 def getUsers():
@@ -166,24 +208,31 @@ def getUserById(id):
 
         users = []
 
-        for elem in data:
-            query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
-            cursor.execute(query2, (id))
-            data2 = cursor.fetchall()
-            user_dict = {}
-            user_dict["Id"] = elem[0]
-            user_dict["Email"] = elem[2]
-            user_dict["Name"] = elem[3]
-            user_dict["Surname"] = elem[4]
-            user_dict["RFID"] = elem[5]
-            user_dict["Type"] = elem[6]
-            user_dict["CustomerId"] = data2[0][0]
-            users.append(user_dict)
+        if (len(data) == 1):
 
-        #return jsonify(users)
-        response = make_response(jsonify(users), 200)
-        response.headers["Access-Control-Allow-Origin"]="*"
-        return response
+            for elem in data:
+                query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
+                cursor.execute(query2, (id))
+                data2 = cursor.fetchall()
+                user_dict = {}
+                user_dict["Id"] = str(elem[0])
+                user_dict["Email"] = str(elem[2])
+                user_dict["Name"] = str(elem[3])
+                user_dict["Surname"] = str(elem[4])
+                user_dict["RFID"] = str(elem[5])
+                user_dict["Type"] = str(elem[6])
+                user_dict["CustomerId"] = str(data2[0][0])
+                users.append(user_dict)
+
+            #return jsonify(users)
+            response = make_response(jsonify(users[0]), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
+        
+        else:
+            response = make_response(jsonify(Reason = 'Wrong Credentials'), 404)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
     
     elif request.method == "DELETE":
 
@@ -194,9 +243,8 @@ def getUserById(id):
         response = make_response(jsonify(Response = 'ok'), 200)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
-        #return json.dumps({'Response': 'Ok'})
 
-@app.route('/api/users/email', methods=["GET"])
+@app.route('/api/users/email', methods=["GET", "POST"])
 def getUserByEmail():
     conn = mysql.connect()
     cursor = conn.cursor()
@@ -214,19 +262,23 @@ def getUserByEmail():
         data2 = cursor.fetchall()
         for elem in data:
             user_dict = {}
-            user_dict["Id"] = elem[0]
-            user_dict["Email"] = elem[2]
-            user_dict["Name"] = elem[3]
-            user_dict["Surname"] = elem[4]
-            user_dict["RFID"] = elem[5]
-            user_dict["Type"] = elem[6]
-            user_dict["CustomerId"] = data2[0][0]
+            user_dict["Id"] = str(elem[0])
+            user_dict["Email"] = str(elem[2])
+            user_dict["Name"] = str(elem[3])
+            user_dict["Surname"] = str(elem[4])
+            user_dict["RFID"] = str(elem[5])
+            user_dict["Type"] = str(elem[6])
+            user_dict["CustomerId"] = str(data2[0][0])
             users.append(user_dict)
 
-    #return jsonify(users) 
-    response = make_response(jsonify(users), 200)
-    response.headers["Access-Control-Allow-Origin"]="*"
-    return response
+        response = make_response(jsonify(users[0]), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
+    
+    else:
+        response = make_response(jsonify(Reason = 'Wrong Credentials'), 404)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
 
 ## New user
 @app.route('/api/users/register', methods=["POST"])
@@ -247,9 +299,10 @@ def createUser():
             return response
         
         else:
-
+            
+            encryptedPassword = generate_password_hash(request.json["password"])
             query = "INSERT INTO USERS(password, username, name, surname, rfid, type) VALUES(%s, %s, %s, %s, %s, %s)"
-            cursor.execute(query, (request.json["password"], request.json["email"], request.json["name"], request.json["surname"], request.json["rfid"], request.json["type"]))
+            cursor.execute(query, (encryptedPassword, request.json["email"], request.json["name"], request.json["surname"], request.json["rfid"], request.json["type"]))
             conn.commit()
             query3 = "SELECT userId FROM USERS WHERE username = %s"
             cursor.execute(query3, (request.json["email"]))
@@ -291,9 +344,7 @@ def getCustomers():
         customer_dict["Name"] = elem[1]
         customers.append(customer_dict)
 
-    #return json.dumps(customers)
-    #return jsonify(customers)
-    response = make_response(jsonify(customers), 200)
+    response = make_response(jsonify(customers, length = len(customers)), 200)
     response.headers["Access-Control-Allow-Origin"]="*"
     return response
 
@@ -342,7 +393,7 @@ def createCustomer():
         conn.commit()
 
         #return json.dumps({'Response': 'Ok'})
-        response = make_response(jsonify(Response = 'ok'), 200)
+        response = make_response(jsonify(Response = 'Ok'), 200)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response                                    
     else:
@@ -425,21 +476,26 @@ def getItemById(id):
 ## New item
 @app.route('/api/items/create', methods=["POST"])
 def createItem():
+    print("Qua-1")
     conn = mysql.connect()
     cursor = conn.cursor()
+    print("Qua-2")
 
     if request.json["description"] and request.json["name"] and request.json["category"] and request.json["customer"] and request.json["rfid"]:
+        print("Qua")
         query = "INSERT INTO ITEMS(description, name, category, customer, rfid) VALUES(%s, %s, %s, %s, %s)"
         cursor.execute(query, (request.json["description"], request.json["name"], request.json["category"], request.json["customer"], request.json["rfid"]))
         conn.commit()
+        print("Qua2")
 
         #return json.dumps({'Response': 'Ok'})
-        response = make_response(jsonify(Response = 'ok'), 200)
+        response = make_response(jsonify(Response = 'Ok'), 200)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
     else:
+        print("Qua-3")
         #return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
-        response = make_response(jsonify(Reason = 'Bad request'), 200)
+        response = make_response(jsonify(Reason = 'Bad request'), 400)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
 
@@ -479,22 +535,17 @@ def rentItemToUser():
     if request.json["userId"] and request.json["itemId"]:
         userId = request.json["userId"]
         itemId = request.json["itemId"]
-        if isItemRented(itemId) == 0:
 
-            query = "UPDATE ITEMS SET PRESENT = 0, LOANED = %s WHERE itemId = %s"
-            values = (userId, itemId)
-            cursor.execute(query, values)
-            conn.commit()
+        query = "UPDATE ITEMS SET PRESENT = 0, LOANED = %s WHERE itemId = %s"
+        values = (userId, itemId)
+        cursor.execute(query, values)
+        conn.commit()
 
-            #return json.dumps({'Response': 'Ok'})
-            response = make_response(jsonify(Response = 'ok'), 200)
-            response.headers["Access-Control-Allow-Origin"]="*"
-            return response
-        else:
-            #return json.dumps({'Response': 'Error', 'Reason': 'Item rented already'})
-            response = make_response(jsonify(Reason = 'Item rented already'), 200)
-            response.headers["Access-Control-Allow-Origin"]="*"
-            return response
+        #return json.dumps({'Response': 'Ok'})
+        response = make_response(jsonify(Response = 'Ok'), 200)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
+
     else:
         #return json.dumps({'Response': 'Error'}), 400
         response = make_response(jsonify(Response = 'Error'), 400)
