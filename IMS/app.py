@@ -70,15 +70,6 @@ def signIn():
                     cursor.execute(query2, (elem[0]))
                     data2 = cursor.fetchall()
                     user_dict = {}
-                    '''
-                    user_dict["Id"] = elem[0]
-                    user_dict["Email"] = elem[2]
-                    user_dict["Name"] = elem[3]
-                    user_dict["Surname"] = elem[4]
-                    user_dict["RFID"] = elem[5]
-                    user_dict["Type"] = elem[6]
-                    user_dict["CustomerId"] = data2[0][0]
-                    '''
                     user_dict["Id"] = str(elem[0])
                     user_dict["Email"] = str(elem[2])
                     user_dict["Name"] = str(elem[3])
@@ -123,15 +114,6 @@ def signInRFID():
                 cursor.execute(query2, (elem[0]))
                 data2 = cursor.fetchall()
                 user_dict = {}
-                '''
-                user_dict["Id"] = elem[0]
-                user_dict["Email"] = elem[2]
-                user_dict["Name"] = elem[3]
-                user_dict["Surname"] = elem[4]
-                user_dict["RFID"] = elem[5]
-                user_dict["Type"] = elem[6]
-                user_dict["CustomerId"] = data2[0][0]
-                '''
                 user_dict["Id"] = str(elem[0])
                 user_dict["Email"] = str(elem[2])
                 user_dict["Name"] = str(elem[3])
@@ -146,7 +128,7 @@ def signInRFID():
             response.headers["Access-Control-Allow-Origin"]="*"
             return response
         else:
-            response = make_response(jsonify(Reason = "RFID not found"), 200)
+            response = make_response(jsonify(Reason = "RFID not found"), 404)
             response.headers["Access-Control-Allow-Origin"]="*"
             return response
     else:
@@ -172,7 +154,6 @@ def getUsers():
     cursor.execute(query)
     data = cursor.fetchall()
 
-    print(data)
     users = []
 
     for elem in data:
@@ -180,13 +161,13 @@ def getUsers():
         cursor.execute(query2, (elem[0]))
         data2 = cursor.fetchall()
         user_dict = {}
-        user_dict["Id"] = elem[0]
-        user_dict["Email"] = elem[2]
-        user_dict["Name"] = elem[3]
-        user_dict["Surname"] = elem[4]
-        user_dict["RFID"] = elem[5]
-        user_dict["Type"] = elem[6]
-        user_dict["CustomerId"] = data2[0][0]
+        user_dict["Id"] = str(elem[0])
+        user_dict["Email"] = str(elem[2])
+        user_dict["Name"] = str(elem[3])
+        user_dict["Surname"] = str(elem[4])
+        user_dict["RFID"] = str(elem[5])
+        user_dict["Type"] = str(elem[6])
+        user_dict["CustomerId"] = str(data2[0][0])
         users.append(user_dict)
 
     #return json.dumps(users)
@@ -340,11 +321,11 @@ def getCustomers():
 
     for elem in data:
         customer_dict = {}
-        customer_dict["Id"] = elem[0]
-        customer_dict["Name"] = elem[1]
+        customer_dict["Id"] = str(elem[0])
+        customer_dict["Name"] = str(elem[1])
         customers.append(customer_dict)
 
-    response = make_response(jsonify(customers, length = len(customers)), 200)
+    response = make_response(jsonify(customers), 200)
     response.headers["Access-Control-Allow-Origin"]="*"
     return response
 
@@ -362,8 +343,8 @@ def getCustomerById(id):
 
         for elem in data:
             customer_dict = {}
-            customer_dict["Id"] = elem[0]
-            customer_dict["Name"] = elem[1]
+            customer_dict["Id"] = str(elem[0])
+            customer_dict["Name"] = str(elem[1])
             customer.append(customer_dict)
 
         #return jsonify(customer)
@@ -395,7 +376,7 @@ def createCustomer():
         #return json.dumps({'Response': 'Ok'})
         response = make_response(jsonify(Response = 'Ok'), 200)
         response.headers["Access-Control-Allow-Origin"]="*"
-        return response                                    
+        return response
     else:
         #return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
         response = make_response(jsonify(Reason = 'Bad request'), 400)
@@ -419,14 +400,14 @@ def getAllItems():
 
     for elem in data:
         item_dict = {}
-        item_dict["ItemId"] = elem[0]
-        item_dict["Description"] = elem[1]
-        item_dict["Name"] = elem[2]
-        item_dict["Category"] = elem[3]
-        item_dict["Customer"] = elem[4]
-        item_dict["Present"] = elem[5]
-        item_dict["Loaned"] = elem[6]
-        item_dict["RFID"] = elem[7]
+        item_dict["ItemId"] = str(elem[0])
+        item_dict["Description"] = str(elem[1])
+        item_dict["Name"] = str(elem[2])
+        item_dict["Category"] = str(elem[3])
+        item_dict["Customer"] = str(elem[4])
+        item_dict["Present"] = str(elem[5])
+        item_dict["Loaned"] = str(elem[6])
+        item_dict["RFID"] = str(elem[7])
         items.append(item_dict)
 
     #return jsonify(items)
@@ -448,14 +429,14 @@ def getItemById(id):
 
         for elem in data:
             item_dict = {}
-            item_dict["ItemId"] = elem[0]
-            item_dict["Description"] = elem[1]
-            item_dict["Name"] = elem[2]
-            item_dict["Category"] = elem[3]
-            item_dict["Customer"] = elem[4]
-            item_dict["Present"] = elem[5]
-            item_dict["Loaned"] = elem[6]
-            item_dict["RFID"] = elem[7]
+            item_dict["ItemId"] = str(elem[0])
+            item_dict["Description"] = str(elem[1])
+            item_dict["Name"] = str(elem[2])
+            item_dict["Category"] = str(elem[3])
+            item_dict["Customer"] = str(elem[4])
+            item_dict["Present"] = str(elem[5])
+            item_dict["Loaned"] = str(elem[6])
+            item_dict["RFID"] = str(elem[7])
             items.append(item_dict)
  
         #return jsonify(items)
@@ -476,24 +457,19 @@ def getItemById(id):
 ## New item
 @app.route('/api/items/create', methods=["POST"])
 def createItem():
-    print("Qua-1")
     conn = mysql.connect()
     cursor = conn.cursor()
-    print("Qua-2")
 
     if request.json["description"] and request.json["name"] and request.json["category"] and request.json["customer"] and request.json["rfid"]:
-        print("Qua")
         query = "INSERT INTO ITEMS(description, name, category, customer, rfid) VALUES(%s, %s, %s, %s, %s)"
         cursor.execute(query, (request.json["description"], request.json["name"], request.json["category"], request.json["customer"], request.json["rfid"]))
         conn.commit()
-        print("Qua2")
 
         #return json.dumps({'Response': 'Ok'})
         response = make_response(jsonify(Response = 'Ok'), 200)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
     else:
-        print("Qua-3")
         #return json.dumps({'Response': 'Error', 'Reason': 'Bad request'}), 400
         response = make_response(jsonify(Reason = 'Bad request'), 400)
         response.headers["Access-Control-Allow-Origin"]="*"
@@ -509,18 +485,15 @@ def isItemRented(itemId):
     data = cursor.fetchall()
 
     if len(data) == 0:
-        #return json.dumps({'Response': 'Error', 'Reason': 'Item does not exist'}), 404
-        response = make_response(jsonify(Reason = 'Item does not exist'), 200)
+        response = make_response(jsonify(Reason = 'Item does not exist'), 404)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
     else:
         if data[0][0] == 0:
-            #return json.dumps({'Loaned': 'No', 'Status': '0'})
             response = make_response(jsonify(Loaned = 'No', Status = '0'), 200)
             response.headers["Access-Control-Allow-Origin"]="*"
             return response
         else:
-            #return json.dumps({'Loaned': 'Yes', 'Status': '1'})
             response = make_response(jsonify(Loaned = 'Yes', Status = '1'), 200)
             response.headers["Access-Control-Allow-Origin"]="*"
             return response
@@ -541,13 +514,11 @@ def rentItemToUser():
         cursor.execute(query, values)
         conn.commit()
 
-        #return json.dumps({'Response': 'Ok'})
         response = make_response(jsonify(Response = 'Ok'), 200)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
 
     else:
-        #return json.dumps({'Response': 'Error'}), 400
         response = make_response(jsonify(Response = 'Error'), 400)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
@@ -567,12 +538,10 @@ def rentItemToUserWithRFID():
         cursor.execute(query, values)
         conn.commit()
 
-        #return json.dumps({'Response': 'Ok'})
         response = make_response(jsonify(Response = 'ok'), 200)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
     else:
-        #return json.dumps({'Response': 'Error'}), 400
         response = make_response(jsonify(Response = 'Error'), 400)
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
@@ -583,7 +552,7 @@ def returnItem(itemId):
     conn = mysql.connect()
     cursor = conn.cursor()
 
-    if itemId and isItemRented(itemId) == "1":
+    if itemId:
         query = "UPDATE ITEMS SET PRESENT = 1, LOANED = 0 WHERE itemId = %s"
         cursor.execute(query, itemId)
         conn.commit()
@@ -603,6 +572,8 @@ def returnItem(itemId):
 def returnItemRFID(itemRFID):
     conn = mysql.connect()
     cursor = conn.cursor()
+
+    #itemRFID = request.json["itemRFID"]
 
     if itemRFID:
         query = "UPDATE ITEMS SET PRESENT = 1, LOANED = 0 WHERE rfid = %s"
