@@ -17,6 +17,7 @@ environment:
   sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
+  flutter_nfc_reader: ^0.1.0
 
   flutter:
     sdk: flutter
@@ -27,6 +28,8 @@ dependencies:
   cupertino_icons: ^1.0.3
   google_fonts: ^2.3.3
   meta: ^1.7.0
+  http: ^0.13.4
+
 
 dev_dependencies:
   flutter_test:
