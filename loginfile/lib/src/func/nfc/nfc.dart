@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_login_signup/src/account_type/usr.dart';
+//import 'package:flutter_login_signup/src/func/search/Myhomepage.dart';
 import 'package:flutter_login_signup/src/loginPage.dart';
+import 'package:flutter_login_signup/src/login_success/afterlogin.dart';
 import 'package:flutter_login_signup/src/signup.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_login_signup/src/Widget/bezierContainer.dart';
+import 'package:flutter_login_signup/src/func/search/search_try.dart';
 
-import '../func/search/search_try.dart';
-import '../login_success/afterlogin.dart';
-import '';
-
-class CusPage extends StatefulWidget {
-  CusPage({Key? key, this.title}) : super(key: key);
+class UsrPage extends StatefulWidget {
+  UsrPage({Key? key, this.title}) : super(key: key);
 
   final String? title;
 
   @override
-  _CusPageState createState() => _CusPageState();
+  _UsrPageState createState() => _UsrPageState();
 }
 
-class _CusPageState extends State<CusPage> {
+class _UsrPageState extends State<UsrPage> {
   Widget _backButton() {
     return InkWell(
       onTap: () {
@@ -39,59 +37,6 @@ class _CusPageState extends State<CusPage> {
       ),
     );
   }
-
-  Widget _manageusrButton() {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => AfterPage(title: 'login')));
-      },
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.symmetric(vertical: 15),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(5)),
-
-
-            gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [Color(0xFF6F35A5), Color(0xfff7892b)])),
-        child: Text(
-          'Manage : User',
-          style: TextStyle(fontSize: 20, color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  Widget _manageitemButton() {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => AfterPage(title: 'login')));
-      },
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.symmetric(vertical: 15),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(5)),
-
-
-            gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [Color(0xFF6F35A5), Color(0xfff7892b)])),
-        child: Text(
-          'Manage : Item',
-          style: TextStyle(fontSize: 20, color: Colors.white),
-        ),
-      ),
-    );
-  }
-
   Widget _BorrowButton() {
     return InkWell(
       onTap: () {
@@ -172,34 +117,6 @@ class _CusPageState extends State<CusPage> {
     );
   }
 
-  Widget _asusrButton() {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => UsrPage()));
-      },
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.symmetric(vertical: 13),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(5)),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                  color: Color(0xffdf8e33).withAlpha(100),
-                  offset: Offset(2, 4),
-                  blurRadius: 8,
-                  spreadRadius: 2)
-            ],
-            color: Colors.white),
-        child: Text(
-          'Continue as user',
-          style: TextStyle(fontSize: 20, color: Color(0xfff7892b)),
-        ),
-      ),
-    );
-  }
-
   Widget _or() {
     return RichText(
       textAlign: TextAlign.center,
@@ -217,7 +134,7 @@ class _CusPageState extends State<CusPage> {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        text: 'Customer ',
+        text: 'User ',
         style: GoogleFonts.portLligatSans(
           textStyle: Theme.of(context).textTheme.headline1,
           fontSize: 30,
@@ -251,19 +168,7 @@ class _CusPageState extends State<CusPage> {
                     SizedBox(height: height * .2),
                     _title(),
                     SizedBox(
-                      height: 30,
-                    ),
-                    _manageusrButton(),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    _manageitemButton(),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    _or(),
-                    SizedBox(
-                      height: 10,
+                      height: 50,
                     ),
                     _BorrowButton(),
                     SizedBox(
@@ -271,11 +176,11 @@ class _CusPageState extends State<CusPage> {
                     ),
                     _ReturnButton(),
                     SizedBox(
-                      height: 10,
+                      height: 30,
                     ),
                     _or(),
                     SizedBox(
-                      height: 10,
+                      height: 30,
                     ),
                     _SearchButton(),
                     SizedBox(
@@ -292,4 +197,3 @@ class _CusPageState extends State<CusPage> {
     );
   }
 }
-

@@ -5,6 +5,7 @@ import 'package:flutter_login_signup/src/signup.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_login_signup/src/Widget/bezierContainer.dart';
 
+import '../func/search/search_try.dart';
 import '../login_success/afterlogin.dart';
 
 class AdminPage extends StatefulWidget {
@@ -116,6 +117,85 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
+  Widget _BorrowButton() {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => AfterPage(title: 'login')));
+      },
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        padding: EdgeInsets.symmetric(vertical: 15),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(5)),
+
+
+            gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0xFF6F35A5), Color(0xfff7892b)])),
+        child: Text(
+          'Borrow',
+          style: TextStyle(fontSize: 20, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _ReturnButton() {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => AfterPage(title: 'login')));
+      },
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        padding: EdgeInsets.symmetric(vertical: 15),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(5)),
+
+
+            gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0xFF6F35A5), Color(0xfff7892b)])),
+        child: Text(
+          'Return',
+          style: TextStyle(fontSize: 20, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _SearchButton() {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => SearchPage()));
+      },
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        padding: EdgeInsets.symmetric(vertical: 13),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(5)),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                  color: Color(0xffdf8e33).withAlpha(100),
+                  offset: Offset(2, 4),
+                  blurRadius: 8,
+                  spreadRadius: 2)
+            ],
+            color: Colors.white),
+        child: Text(
+          'Search',
+          style: TextStyle(fontSize: 20, color: Color(0xfff7892b)),
+        ),
+      ),
+    );
+  }
 
   Widget _asusrButton() {
     return InkWell(
@@ -194,10 +274,10 @@ Widget build(BuildContext context) {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  SizedBox(height: height * .2),
+                  SizedBox(height: height * .1),
                   _title(),
                   SizedBox(
-                    height: 80,
+                    height: 30,
                   ),
                   _managecusButton(),
                   SizedBox(
@@ -209,13 +289,25 @@ Widget build(BuildContext context) {
                   ),
                   _manageitemButton(),
                   SizedBox(
-                    height: 20,
+                    height: 10,
                   ),
                   _or(),
                   SizedBox(
+                    height: 10,
+                  ),
+                  _BorrowButton(),
+                  SizedBox(
                     height: 20,
                   ),
-                  _asusrButton(),
+                  _ReturnButton(),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  _or(),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  _SearchButton(),
                   SizedBox(
                     height: 20,
                   ),

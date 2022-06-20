@@ -1,4 +1,4 @@
-import 'dart:html';
+//import 'dart:html';
 import 'dart:io';
 import 'dart:ui';
 
@@ -8,8 +8,8 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert' as convert;
 
-String URL = 'http://192.168.137.168:5000/';
-String URL_totem = 'http://192.168.137.168:5000/';
+String URL = 'http://192.168.1.9:5000/';
+String URL_totem = 'http://192.168.1.8:5000/';
 
 User empty_usr = const User(
     rfidNum: '0',
@@ -20,6 +20,7 @@ User empty_usr = const User(
     surname: '0',
     type: '0');
 RFID empty_rfid = const RFID(rfidNum: '0');
+CST empty_cst = const CST(cst_id: '0', name: '0');
 
 class RFID {
   final String rfidNum;
@@ -87,8 +88,8 @@ class User {
       email: json['Email'],
       name: json['Name'],
       surname: json['Surname'],
-      type: json['Type'],
-      cst_id: json['Customer_Id'],
+      type: json['Type'], // 0 usr, 1 cst_admin, 2 superadmin
+      cst_id: json['CustomerId'],
     );
   }
 }
@@ -132,12 +133,14 @@ class item {
         customer: json['Customer'],
         present: json['Present'],
         loaned: json['Loaned'],
-        id: json['ItemID']);
+        id: json['ItemId']);
   }
 }
 
 Future<User> signInUser(String email, String password) async {
-  final _response = sendUser(email, password);
+  final _response = await sendUser(email, password);
+
+  print(User.fromJson(convert.jsonDecode(_response.body)).name);
 
   if (_response.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -146,7 +149,8 @@ Future<User> signInUser(String email, String password) async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to load User'); // void User?
+    print('Failed to load User'); // void User?
+    return empty_usr;
   }
 }
 
@@ -157,7 +161,17 @@ sendUser(String email, String password) async {
       },
       body:
       convert.jsonEncode({'inputEmail': email, 'inputPassword': password}));
-  return res;
+
+  if (res.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    print('Signin');
+    return res;
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to send User'); // void User?
+  }
 }
 
 /*SignInUser(String email, String pwd) async {
@@ -195,17 +209,19 @@ Future<User> signInRFID() async {
   RFID tmp = await fetchRFID();
 
   if (tmp.rfidNum != '') {
-    final _response = sendRFID(tmp.rfidNum);
+    print(tmp.rfidNum);
+    final _response = await sendRFID(tmp.rfidNum);
 
     if (_response.statusCode == 200) {
+      print('ok');
       // If the server did return a 200 OK response,
       // then parse the JSON.
       return User.fromJson(convert.jsonDecode(_response.body));
     } else {
       // If the server did not return a 200 OK response,
       // then throw an exception.
-      throw Exception('Failed to load User');
-      //return void User?
+      print('Failed to load User');
+      return empty_usr;
     }
   } else {
     return empty_usr;
@@ -217,7 +233,7 @@ sendRFID(String rfid) async {
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
-      body: convert.jsonEncode({'RFID': rfid}));
+      body: convert.jsonEncode({'itemRFID': rfid}));
   return res;
 }
 
@@ -241,8 +257,23 @@ Future<RFID> fetchRFID() async {
 }
 
 Future<User> getUser(String email) async {
-  final _response = sendemail(email);
+  final _response = await sendemail(email);
+  if (_response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    print(convert.jsonDecode(_response.body));
 
+    return User.fromJson(convert.jsonDecode(_response.body));
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to load User'); // void User?
+    return empty_usr;
+  }
+}
+
+Future<User> getUserId(String id) async {
+  final _response = await sendId(id);
   if (_response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
@@ -250,22 +281,39 @@ Future<User> getUser(String email) async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to load User'); // void User?
+    print('Failed to load User'); // void User?
+    return empty_usr;
   }
 }
 
 sendemail(String email) async {
   //add ID search
-  final res = await http.post(Uri.parse(URL + 'api/users'),
+  final res = await http.post(Uri.parse(URL + 'api/users/email'),
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
-      body: convert.jsonEncode({'inputEmail': email}));
+      body: convert.jsonEncode({'email': email}));
+  return res;
+}
+
+sendId(String id) async {
+  //add ID search
+  final res = await http.get(
+    Uri.parse(URL + 'api/users/' + id),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'email': email})
+  );
   return res;
 }
 
 add_user(String email, String password, String name, String type,
-    String surname, String cst_ID, String rfid) async {
+    String surname, String cst_ID, String rfid, String platform) async {
+  if (rfid == '' && platform == 'totem') {
+    RFID tmp = await fetchRFID();
+    rfid = tmp.rfidNum;
+  }
   final res = await http.post(Uri.parse(URL + 'api/users/register'),
       headers: <String, String>{
         'Content-Type': 'application/json',
@@ -277,7 +325,7 @@ add_user(String email, String password, String name, String type,
         'surname': surname,
         'rfid': rfid,
         'type': type,
-        'cst_ID': cst_ID
+        'customerId': cst_ID
       }));
   if (res.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -291,12 +339,44 @@ add_user(String email, String password, String name, String type,
   return res;
 }
 
-remove_user(String email) async {
-  final res = await http.delete(Uri.parse(URL + 'api/users/<int:id>'),
-      headers: <String, String>{
-        'Content-Type': 'application/json',
-      },
-      body: convert.jsonEncode({'Email': email}));
+Future<List<dynamic>> get_users() async {
+  // null string to get all the users of the entire app
+  final _response = await http.get(
+    Uri.parse(URL + 'api/users'),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+  );
+  if (_response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    //return CST.fromJson(convert.jsonDecode(_response.body));
+    var dict = new Map();
+    var list = [];
+    var list_final = [];
+    list = convert.jsonDecode(_response.body);
+
+    for (int i = 0; i < list.length; i++) {
+      User tmp = User.fromJson(list[i]);
+      list_final.add(tmp);
+    }
+    return list_final; //list of users objects
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to load User'); // void User?
+    return [];
+  }
+}
+
+remove_user(String id) async {
+  final res = await http.delete(
+    Uri.parse(URL + 'api/users/' + id),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'Email': email})
+  );
   if (res.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
@@ -304,19 +384,17 @@ remove_user(String email) async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to remove User'); // void User?
+    print('Failed to remove User'); // void User?
   }
   return res;
 }
-
-//Future<CTS> getCst() {}
 
 add_cst(String name) async {
   final res = await http.post(Uri.parse(URL + 'api/customers/register'),
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
-      body: convert.jsonEncode({'Name': name}));
+      body: convert.jsonEncode({'name': name}));
   if (res.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
@@ -324,17 +402,76 @@ add_cst(String name) async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to add User'); // void User?
+    print('Failed to add User'); // void User?
   }
   return res;
 }
 
-remove_cst(String name) async {
-  final res = await http.delete(Uri.parse(URL + 'api/customers/<int:id>'),
-      headers: <String, String>{
-        'Content-Type': 'application/json',
-      },
-      body: convert.jsonEncode({'Name': name}));
+Future<List<dynamic>> get_cst(String cstId) async {
+  // String null to get all the possible customers
+  final _response = await http.get(
+    Uri.parse(URL + 'api/customers/' + cstId),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'email': email})
+  );
+  if (_response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    //return CST.fromJson(convert.jsonDecode(_response.body));
+    var dict = new Map();
+    var list_cst = [];
+    list_cst = convert.jsonDecode(_response.body);
+
+    return list_cst;
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to load User'); // void User?
+    return [];
+  }
+}
+
+Future<List<dynamic>> get_csts() async {
+  // String null to get all the possible customers
+  final _response = await http.get(
+    Uri.parse(URL + 'api/customers'),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'email': email})
+  );
+  if (_response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    //return CST.fromJson(convert.jsonDecode(_response.body));
+    var dict = new Map();
+    var list_cst = [];
+    var list_final = [];
+    list_cst = convert.jsonDecode(_response.body);
+    for (int i = 0; i < list_cst.length; i++) {
+      CST tmp = CST.fromJson(list_cst[i]);
+      list_final.add(tmp);
+    }
+
+    return list_cst;
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to load CSTs'); // void User?
+    return [];
+  }
+}
+
+remove_cst(String id) async {
+  final res = await http.delete(
+    Uri.parse(URL + 'api/customers/' + id),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'Name': name})
+  );
   if (res.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
@@ -342,24 +479,27 @@ remove_cst(String name) async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to remove customer'); // void User?
+    print('Failed to remove customer'); // void User?
   }
   return res;
 }
 
 add_item(String name, String description, String category, String cst,
-    String rfid, String id) async {
-  final res = await http.post(Uri.parse(URL + 'api/item/create'),
+    String rfid) async {
+  if (rfid == '') {
+    RFID tmp = await fetchRFID();
+    rfid = tmp.rfidNum;
+  }
+  final res = await http.post(Uri.parse(URL + 'api/items/create'),
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
       body: convert.jsonEncode({
-        'Description': description,
-        'Name': name,
-        'Category': category,
-        'Customer': cst,
-        'RFID': rfid,
-        'ItemId': id,
+        'description': description,
+        'name': name,
+        'category': category,
+        'customer': cst,
+        'rfid': rfid,
       }));
   if (res.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -368,33 +508,95 @@ add_item(String name, String description, String category, String cst,
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to add item'); // void User?
+    print('Failed to add item');
   }
   return res;
 }
 
-//controllare
-remove_item(String name) async {
-  final res = await http.delete(Uri.parse(URL + 'api/items/<int:id>'),
-      headers: <String, String>{
-        'Content-Type': 'application/json',
-      },
-      body: convert.jsonEncode({'Name': name}));
-  if (res.statusCode == 200) {
+Future<List<dynamic>> get_item(String cstId) async {
+  //null String ??
+  final _response = await http.get(
+    Uri.parse(URL + 'api/items/' + cstId), //check the url
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+  );
+  if (_response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    print('Added well');
+    //return CST.fromJson(convert.jsonDecode(_response.body));
+    var dict = new Map();
+    var list_item = [];
+    list_item = convert.jsonDecode(_response.body);
+    /*for (int i = 0; i < dict.length; i++) {
+      item tmp = item.fromJson(dict["$i"]);
+      list_item.add(tmp);
+    }*/
+    item tmp = item.fromJson(list_item[0]);
+    print(tmp.category);
+    return list_item;
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to add User'); // void User?
+    print('Failed to load items'); // void User?
+    return [];
+  }
+}
+
+Future<List<dynamic>> get_items() async {
+  //null String ??
+  final _response = await http.get(
+    Uri.parse(URL + 'api/items'), //check the url
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+  );
+  if (_response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    //return CST.fromJson(convert.jsonDecode(_response.body));
+    var dict = new Map();
+    var list_item = [];
+    var list_final = [];
+    list_item = convert.jsonDecode(_response.body);
+
+    for (int i = 0; i < list_item.length; i++) {
+      item tmp = item.fromJson(list_item[i]);
+      list_final.add(tmp);
+    }
+    return list_final;
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to load items'); // void User?
+    return [];
+  }
+}
+
+//controllare
+remove_item(String id) async {
+  final res = await http.delete(
+    Uri.parse(URL + 'api/items/' + id),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'Name': name})
+  );
+  if (res.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    print('Removed well');
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to remove item');
   }
   return res;
 }
 
 //item rent
 item_rent(String itemId, String userId) async {
-  final res = await http.put(Uri.parse(URL + 'api/item/rent'),
+  final res = await http.put(Uri.parse(URL + 'api/items/rent'),
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
@@ -407,18 +609,40 @@ item_rent(String itemId, String userId) async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to rent item'); // void User?
+    print('Failed to rent item');
+  }
+  return res;
+}
+
+item_rentRFID(String userId) async {
+  RFID tmp = await fetchRFID();
+  final res = await http.put(Uri.parse(URL + 'api/items/rentRFID'),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+      },
+      body: convert.jsonEncode({'userId': userId, 'itemRFID': tmp.rfidNum}));
+
+  if (res.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    print('Rented well');
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to rent item');
   }
   return res;
 }
 
 //item return, return RFID
 item_return(String itemId) async {
-  final res = await http.put(Uri.parse(URL + 'api/item/return/<int:itemId>'),
-      headers: <String, String>{
-        'Content-Type': 'application/json',
-      },
-      body: convert.jsonEncode({'itemId': itemId}));
+  final res = await http.put(
+    Uri.parse(URL + 'api/items/return/' + itemId),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'itemId': itemId})
+  );
 
   if (res.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -427,18 +651,20 @@ item_return(String itemId) async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to return item'); // void User?
+    print('Failed to return item'); // void User?
   }
   return res;
 }
 
 item_returnRFID() async {
   RFID tmp = await fetchRFID();
-  final res = await http.put(Uri.parse(URL + 'api/item/return/<int:itemRFID>'),
-      headers: <String, String>{
-        'Content-Type': 'application/json',
-      },
-      body: convert.jsonEncode({'itemRFID': tmp.rfidNum}));
+  final res = await http.put(
+    Uri.parse(URL + 'api/items/returnRFID/' + tmp.rfidNum),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+    //body: convert.jsonEncode({'itemRFID': tmp.rfidNum})
+  );
 
   if (res.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -447,7 +673,29 @@ item_returnRFID() async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to return item'); // void User?
+    print('Failed to return item'); // void User?
   }
   return res;
+}
+
+Future<Map> item_ispresent(String itemId) async {
+  final _response = await http.get(
+    Uri.parse(URL + '/api/items/isRented/' + itemId),
+    headers: <String, String>{
+      'Content-Type': 'application/json',
+    },
+  );
+  if (_response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    //return CST.fromJson(convert.jsonDecode(_response.body));
+    var dict = new Map();
+    dict = convert.jsonDecode(_response.body);
+    return dict;
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    print('Failed to load User'); // void User?
+    return {};
+  }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_login_signup/src/Widget/bezierContainer.dart';
+import 'package:flutter_login_signup/src/func/nfc.dart';
 import 'package:flutter_login_signup/src/loginPage.dart';
+import 'func/connection.dart';
+import 'package:flutter_nfc_reader/flutter_nfc_reader.dart';
 
 class SignUpPage extends StatefulWidget {
   SignUpPage({Key ?key, this.title}) : super(key: key);
@@ -32,8 +35,13 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
+  final email_controller = TextEditingController();
+  final pw_controller = TextEditingController();
+  final name_controller = TextEditingController();
+  final surname_controller = TextEditingController();
+  final _scan_rfid_read = TextEditingController();
 
-  Widget _entryField(String title, {bool isPassword = false}) {
+  Widget _entryField(String title, isPassword, _controller) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: Column(
@@ -47,6 +55,7 @@ class _SignUpPageState extends State<SignUpPage> {
             height: 10,
           ),
           TextField(
+            controller: _controller,
               obscureText: isPassword,
               decoration: InputDecoration(
                   border: InputBorder.none,
@@ -56,9 +65,83 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
+  String _scan_rfid = '';
+
+  nfc_reader_tmp(){
+    var Id = '';
+    FlutterNfcReader.onTagDiscovered().listen((onData) {
+      print(onData.id);
+      _scan_rfid = onData.id;
+      print(onData.content);
+    });
+    return Id;
+  }
+
+
+  Widget _NfcButton() {
+    return InkWell(
+      onTap: () async {
+
+        //RFID tmp = await fetchRFID();
+        String tmp = nfc_reader_tmp();
+
+        setState(() {
+          //_scan_rfid = tmp.rfidNum;
+          _scan_rfid = _scan_rfid; //smartphone
+        });
+      },
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        padding: EdgeInsets.symmetric(vertical: 15),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(5)),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                  color: Colors.grey.shade200,
+                  offset: Offset(2, 4),
+                  blurRadius: 5,
+                  spreadRadius: 2)
+            ],
+
+            gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0xFF6F35A5), Color(0xfff7892b)])),
+        child: Text(
+          'Scan RFID',
+          style: TextStyle(fontSize: 20, color: Colors.white),
+        ),
+      ),
+    );
+  }
 
   Widget _submitButton() {
-    return Container(
+    return InkWell(
+        onTap: () async {
+          if(_scan_rfid != 'Scan RFID') {
+            add_user(
+                email_controller.text,
+                pw_controller.text,
+                name_controller.text,
+                '0',
+                surname_controller.text,
+                '1',
+                _scan_rfid, 'totem');
+          }else{
+            add_user(
+                email_controller.text,
+                pw_controller.text,
+                name_controller.text,
+                '0',
+                surname_controller.text,
+                '1',
+                '', 'totem');
+          }
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => LoginPage()));
+    },
+    child: Container(
       width: MediaQuery.of(context).size.width,
       padding: EdgeInsets.symmetric(vertical: 15),
       alignment: Alignment.center,
@@ -79,7 +162,7 @@ class _SignUpPageState extends State<SignUpPage> {
         'Register Now',
         style: TextStyle(fontSize: 20, color: Colors.white),
       ),
-    );
+    ));
   }
 
   Widget _loginAccountLabel() {
@@ -141,9 +224,10 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget _emailPasswordWidget() {
     return Column(
       children: <Widget>[
-        _entryField("Username"),
-        _entryField("Email id"),
-        _entryField("Password", isPassword: true),
+        _entryField("Name", false, name_controller),
+        _entryField("Surname" ,false, surname_controller),
+        _entryField("Email", false, email_controller),
+        _entryField("Password", true, pw_controller),
       ],
     );
   }
@@ -175,7 +259,12 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     _emailPasswordWidget(),
                     SizedBox(
-                      height: 20,
+                      height: 10,
+                    ),
+                    _NfcButton(),
+                    Text(_scan_rfid, style: TextStyle(fontSize: 20)),
+                    SizedBox(
+                      height: 10,
                     ),
                     _submitButton(),
                     SizedBox(height: height * .14),

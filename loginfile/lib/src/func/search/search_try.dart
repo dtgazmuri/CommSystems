@@ -39,7 +39,11 @@ class _SearchPageState extends State<SearchPage> {
 
                                   hintText: 'Searching',
                                   prefixIcon: Icon(Icons.search),
-                                  suffixIcon: Icon(Icons.nfc_sharp)),
+
+                                  suffixIcon: Icon(Icons.nfc_sharp),
+
+
+                              ),
                             ),
                           ),
                         ),

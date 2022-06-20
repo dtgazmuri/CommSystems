@@ -3,8 +3,13 @@ import 'package:flutter_login_signup/src/signup.dart';
 import 'package:flutter_login_signup/src/units/forgot.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_login_signup/src/login_success/afterlogin.dart';
-
+import 'package:flutter/services.dart';
+import 'func/connection.dart';
 import 'Widget/bezierContainer.dart';
+
+import 'package:flutter_login_signup/src/account_type/admin.dart';
+import 'package:flutter_login_signup/src/account_type/cus.dart';
+import 'package:flutter_login_signup/src/account_type/usr.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({Key? key, this.title}) : super(key: key);
@@ -16,6 +21,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  TextEditingController textcontroller = TextEditingController();
   Widget _backButton() {
     return InkWell(
       onTap: () {
@@ -35,9 +41,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+    print(123354);
   }
 
-  Widget _entryField(String title, {bool isPassword = false}) {
+  final email_controller = TextEditingController();
+  final pw_controller = TextEditingController();
+  Widget _entryField(String title, isPassword, _controller) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: Column(
@@ -51,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
             height: 10,
           ),
           TextField(
+              controller: _controller,
               obscureText: isPassword,
               decoration: InputDecoration(
                   border: InputBorder.none,
@@ -61,11 +71,36 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _submitButton() {
+
+
+Widget _submitButton() {
     return InkWell(
-        onTap: () {
+        onTap: () async {
+          User _user = await signInUser(email_controller.text, pw_controller.text);
+
+          print(_user.id);
+          print(_user.name);
+          var name_page;
+
+          if (_user.id == '0') {
+             name_page = LoginPage();
+
+          }else{
+            //_user.type 0 usr 1 cst_admin 2 super_admin
+            if(_user.type == '0'){
+              //page of user
+              name_page = UsrPage(title: 'login');
+            }else if(_user.type == '1'){
+                // page of cst_admin
+                name_page = CusPage(title: 'login');
+              }else if (_user.type == '2') {
+              //page of s_admin
+              name_page = AdminPage(title: 'login');
+            }
+          }
+
           Navigator.push(
-              context, MaterialPageRoute(builder: (context) => AfterPage(title: 'login')));
+              context, MaterialPageRoute(builder: (context) => name_page));
         },
         child: Container(
           width: MediaQuery.of(context).size.width,
@@ -110,20 +145,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _facebookButton() {
-    return Container(
-      height: 50,
-      margin: EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-      ),
-      child: Row(
-        children: <Widget>[
 
-        ],
-      ),
-    );
-  }
 
   Widget _createAccountLabel() {
     return InkWell(
@@ -184,8 +206,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget _emailPasswordWidget() {
     return Column(
       children: <Widget>[
-        _entryField("Email id"),
-        _entryField("Password", isPassword: true),
+        _entryField("Email id", false, email_controller),
+        _entryField("Password", true, pw_controller),
       ],
     );
   }
@@ -236,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   ),
                   _divider(),
-                  _facebookButton(),
+
                   SizedBox(height: height * .055),
                   _createAccountLabel(),
                 ],
