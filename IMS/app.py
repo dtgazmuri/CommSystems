@@ -475,13 +475,38 @@ def createItem():
         response.headers["Access-Control-Allow-Origin"]="*"
         return response
 
-@app.route('/api/items/isRented/<int:itemId>', methods=["GET"])
-def isItemRented(itemId):
+@app.route('/api/items/isRented/<int:customerId>/<int:itemId>', methods=["GET"])
+def isItemRented(customerId, itemId):
     conn = mysql.connect()
     cursor = conn.cursor()
 
-    query = "SELECT LOANED FROM ITEMS WHERE itemId = %s"
-    cursor.execute(query, itemId)
+    query = "SELECT LOANED FROM ITEMS WHERE itemId = %s AND customer = %s"
+    values = (itemId, customerId)
+    cursor.execute(query, values)
+    data = cursor.fetchall()
+
+    if len(data) == 0:
+        response = make_response(jsonify(Reason = 'Item does not exist'), 404)
+        response.headers["Access-Control-Allow-Origin"]="*"
+        return response
+    else:
+        if data[0][0] == 0:
+            response = make_response(jsonify(Loaned = 'No', Status = '0'), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
+        else:
+            response = make_response(jsonify(Loaned = 'Yes', Status = '1'), 200)
+            response.headers["Access-Control-Allow-Origin"]="*"
+            return response
+
+@app.route('/api/items/isRented/<int:customerId>/<int:RFID>', methods=["GET"])
+def isItemRentedRFID(customerId, RFID):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+
+    query = "SELECT LOANED FROM ITEMS WHERE rfid = %s AND customer = %s"
+    values = (RFID, customerId)
+    cursor.execute(query, values)
     data = cursor.fetchall()
 
     if len(data) == 0:
