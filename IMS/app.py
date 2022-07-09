@@ -69,6 +69,9 @@ def signIn():
                     query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
                     cursor.execute(query2, (elem[0]))
                     data2 = cursor.fetchall()
+                    cst_ids_list = []
+                    for elem2 in data2:
+                        cst_ids_list.append(str(elem2[0]))
                     user_dict = {}
                     user_dict["Id"] = str(elem[0])
                     user_dict["Email"] = str(elem[2])
@@ -76,7 +79,7 @@ def signIn():
                     user_dict["Surname"] = str(elem[4])
                     user_dict["RFID"] = str(elem[5])
                     user_dict["Type"] = str(elem[6])
-                    user_dict["CustomerId"] = str(data2[0][0])
+                    user_dict["CustomerId"] = cst_ids_list
                     user.append(user_dict)
                 session["email"] = user_dict["Email"]
                 session["name"] = user_dict["Name"] + " " + user_dict["Surname"]
@@ -113,6 +116,9 @@ def signInRFID():
                 query2 = "SELECT customerId FROM Users2Customers WHERE userId = %s"
                 cursor.execute(query2, (elem[0]))
                 data2 = cursor.fetchall()
+                cst_ids_list = []
+                for elem2 in data2:
+                    cst_ids_list.append(str(elem2[0]))
                 user_dict = {}
                 user_dict["Id"] = str(elem[0])
                 user_dict["Email"] = str(elem[2])
@@ -120,7 +126,7 @@ def signInRFID():
                 user_dict["Surname"] = str(elem[4])
                 user_dict["RFID"] = str(elem[5])
                 user_dict["Type"] = str(elem[6])
-                user_dict["CustomerId"] = str(data2[0][0])
+                user_dict["CustomerId"] = cst_ids_list
                 user.append(user_dict)
             session["email"] = user_dict["Email"]
             session["name"] = user_dict["Name"] + " " + user_dict["Surname"]
